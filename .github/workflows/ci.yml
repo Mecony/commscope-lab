@@ -1,0 +1,25 @@
+name: Verify communication model
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - run: npm test
+      - run: python3 scripts/build-portable.py
+      - run: git diff --exit-code -- CommScope-Lab.html index.html
+  python-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r reference/requirements.txt
+      - run: python -m unittest discover -s reference -p 'test_*.py' -v
