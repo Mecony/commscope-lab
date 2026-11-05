@@ -33,7 +33,9 @@ python3 -m http.server 8000 --directory dist
 
 打开 `http://localhost:8000`。Windows 可用 `py -m http.server 8000 --directory dist`。
 
-也提供根目录的 **CommScope-Lab.html**：将 CSS、脚本与 Worker 内嵌到单个文件，方便下载后尝试打开。当前环境不允许浏览器访问 `file://`，因此未实测双击模式的浏览器兼容性；遇到限制时使用上面的 HTTP 方式。
+根目录的 **CommScope-Lab.html** 是本地体验版：CSS 与脚本全部内嵌；扫描使用可取消的分块计算，不依赖 Worker、模块加载、网络请求或服务器。下载到电脑后，可用 Chrome 或 Edge 打开，不需要登录 ChatGPT 或安装 Python。
+
+请先下载文件并从电脑的下载文件夹打开，不要将 ChatGPT 或 GitHub 的文件预览当成程序运行。当前环境不允许浏览器访问 `file://`，实际双击兼容性仍未实测；该版本已通过脚本语法、无外部启动依赖、计算一致性和取消操作测试。
 
 重新生成单文件版：
 
