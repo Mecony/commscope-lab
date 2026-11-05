@@ -1,5 +1,9 @@
 # CommScope Lab · 数字通信实验台
 
+**[▶ 在线体验数字通信实验台](https://mecony.github.io/commscope-lab/)**
+
+无需下载或安装，使用 Chrome、Edge 等浏览器即可打开。
+
 **通俗介绍：** 输入一段文字，观察噪声怎样让接收消息出错，再通过批量实验检查误码率。
 
 **技术介绍：** BPSK / Gray QPSK 符号级复基带 AWGN 仿真，支持相干判决、逐位错误检查、蒙特卡洛 BER 评估及理论对照。
@@ -51,9 +55,11 @@ python3 scripts/build-portable.py
 
 ### GitHub Pages 入口
 
-根目录已提供自动生成的 `index.html` 与 `.nojekyll`，可以直接作为 Pages 发布目录。Pages 需要仓库管理员在 Settings → Pages 中将 Source 设为 Deploy from a branch，选择 `main` 和 `/(root)` 后保存。
+在线地址：**[https://mecony.github.io/commscope-lab/](https://mecony.github.io/commscope-lab/)**。
 
-**Pages 开通状态以仓库设置返回的实际地址为准。这里没有把尚未确认开通的地址写成可用 Demo。** 根目录入口采用单文件分块计算，`dist/` 模块版采用 Worker；两者使用相同通信核心和随机种子规则。
+通过 GitHub Pages 发布，发布源为 `main` 分支的 `/(root)`。根目录的 `index.html` 为自动生成的网页入口，保留 `.nojekyll`。
+
+根目录入口采用单文件分块计算，`dist/` 模块版采用 Worker；两者使用相同通信核心和随机种子规则。
 
 ## 试三个实验
 
