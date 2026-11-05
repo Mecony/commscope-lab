@@ -20,6 +20,7 @@ test('portable calculation can be cancelled before its first chunk',async()=>{
 test('single HTML parses as classic JavaScript and has no external startup dependencies',()=>{
   const html=fs.readFileSync(new URL('../CommScope-Lab.html',import.meta.url),'utf8');
   assert.ok(!/<script[^>]+src=/.test(html));assert.ok(!/rel="stylesheet"/.test(html));
+  assert.equal(html,fs.readFileSync(new URL('../index.html',import.meta.url),'utf8'));
   const code=html.match(/<script>([\s\S]*?)<\/script>/)[1];new vm.Script(code);
   assert.ok(!/new Worker\(/.test(code));assert.ok(!/\bfetch\(/.test(code));
   assert.ok(/new PortableRunner\(\)/.test(code));

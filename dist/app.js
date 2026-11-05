@@ -1,9 +1,10 @@
 import { VERSION, simulateTransmission, validateSweep } from './core.js';
 import { constellation, sequence, berChart } from './charts.js';
+import { constellationSelection, zeroErrorExplanation } from './view-data.js';
 const $=id=>document.getElementById(id);
 const state={mode:'QPSK',result:null,rows:[],sweepConfig:null,running:false,worker:null,lastSweep:null};
 const sci=x=>x===0?'0':x.toExponential(2),number=x=>x.toLocaleString('en-US');let toastTimer,resizeFrame;
-function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),5000);}
+function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),Math.max(5000,Math.min(12000,Array.from(message).length*130)));}
 function download(content,name,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function readConfig(){return{mode:state.mode,input:$('input-mode').value,text:$('message').value,bitCount:Number($('bit-count').value),noise:$('noise-toggle').checked,ebn0:Number($('ebn0').value),seed:Number($('seed').value)};}
 function markStale(){if(state.result)$('stale-note').hidden=false;}
@@ -15,7 +16,9 @@ function renderTransmission(result){
   $('metric-errors').textContent=number(result.errors);$('metric-error-note').textContent=result.errors?'已标记错误位置':'本样本未观察到错误';$('metric-ber').textContent=sci(result.ber);$('metric-theory').textContent=`理论值 ${sci(result.theory)}`;
   $('metric-status').textContent=result.errors?'出现误码':'完整恢复';$('metric-status').classList.toggle('has-error',result.errors>0);$('metric-seed').textContent=`随机种子 ${result.config.seed}`;
   $('chain-bits').textContent=`${number(result.bits.length)} bits`;$('chain-mode').textContent=`${result.config.mode} 调制`;$('chain-noise').textContent=result.config.noise?`Eᵦ/N₀ = ${result.config.ebn0} dB`:'无噪声对照';
-  $('constellation-count').textContent=result.symbols>1200?`均匀抽样 1200 / ${number(result.symbols)} 个符号`:`${number(result.symbols)} 个符号`;
+  const selection=constellationSelection(result);
+  $('constellation-count').textContent=result.symbols>1200?`显示 ${number(selection.indices.length)} / ${number(result.symbols)} 个符号，包含全部错误符号`:`${number(result.symbols)} 个符号 · 全量显示`;
+  const explanation=zeroErrorExplanation(result);$('zero-error-note').textContent=explanation;$('zero-error-note').hidden=!explanation;
   const text=result.config.input==='text';$('sent-message').textContent=text?result.config.text:Array.from(result.bits.slice(0,96)).join('')+(result.bits.length>96?'…':'');$('received-message').textContent=text?result.decoded.text:Array.from(result.received.slice(0,96)).join('')+(result.received.length>96?'…':'');
   $('message-status').textContent=!text?'随机序列':!result.decoded.valid?'UTF-8 解码含无效字节':result.errors?'消息发生变化':'消息完整';
   const n=Math.min(128,result.bits.length);$('bit-summary').textContent=`前 ${n} / ${result.bits.length} 位 · 从 0 计数`;
@@ -25,9 +28,9 @@ function renderTransmission(result){
 function transmit(){try{renderTransmission(simulateTransmission(readConfig()));}catch(error){toast(error.message);}}
 function renderRows(){
   $('results-table-wrap').hidden=!state.rows.length;$('export-csv').disabled=!state.rows.length;
-  const fragment=document.createDocumentFragment();for(const row of state.rows){const tr=document.createElement('tr');for(const value of [row.mode,`${row.ebn0} dB`,number(row.bits),number(row.errors),row.errors?sci(row.ber):`< ${sci(row.high)} (95%)`,row.stoppedBy==='target-errors'?'目标错误数':'比特上限']){const td=document.createElement('td');td.textContent=value;tr.append(td);}fragment.append(tr);}$('results-table').replaceChildren(fragment);berChart($('ber-chart'),state.rows,state.sweepConfig);
+  const fragment=document.createDocumentFragment();for(const row of state.rows){const tr=document.createElement('tr');for(const value of [row.mode,`${row.ebn0} dB`,number(row.bits),number(row.errors),row.errors?sci(row.ber):`未发现错误；上界 ${sci(row.high)}`,row.stoppedBy==='target-errors'?'目标错误数':'比特上限']){const td=document.createElement('td');td.textContent=value;tr.append(td);}fragment.append(tr);}$('results-table').replaceChildren(fragment);berChart($('ber-chart'),state.rows,state.sweepConfig);
 }
-function setRunning(running){state.running=running;$('run-sweep').hidden=running;$('stop-sweep').hidden=!running;for(const id of ['sweep-min','sweep-max','sweep-step','sweep-budget'])$(id).disabled=running;}
+function setRunning(running){state.running=running;$('run-sweep').hidden=running;$('stop-sweep').hidden=!running;for(const id of ['sweep-min','sweep-max','sweep-step','sweep-budget'])$(id).disabled=running;const config=state.sweepConfig;$('scan-context').hidden=!config;if(config)$('scan-context').textContent=`本次扫描：${config.min}～${config.max} dB，步长 ${config.step} dB，种子 ${config.seed}。扫描与上方单次实验分别运行，修改上方参数不会改变本次扫描。`;}
 function startSweep(){
   if(state.running)return;
   const config={min:Number($('sweep-min').value),max:Number($('sweep-max').value),step:Number($('sweep-step').value),maxBits:Number($('sweep-budget').value),targetErrors:200,seed:Number($('seed').value)};

@@ -1,17 +1,18 @@
 import { theoreticalBer } from './core.js';
+import { constellationSelection } from './view-data.js';
 const C={grid:'#edf1f6',axis:'#ced8e6',text:'#9aa9bd',blue:'#527fe8',orange:'#dfa468',red:'#d96577',theory:'#95a4ba'};
 function prepare(canvas){const r=canvas.getBoundingClientRect(),w=Math.max(200,r.width),h=Math.max(120,r.height),d=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==Math.round(w*d)||canvas.height!==Math.round(h*d)){canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);}const c=canvas.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);c.font='9px ui-monospace,monospace';c.lineWidth=1;return{c,w,h};}
 function line(c,x0,y0,x1,y1,color,width=1){c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();}
 function circle(c,x,y,r,color,fill=true){c.beginPath();c.arc(x,y,r,0,Math.PI*2);if(fill){c.fillStyle=color;c.fill();}else{c.strokeStyle=color;c.lineWidth=1.5;c.stroke();}}
 export function constellation(canvas,result){const{c,w,h}=prepare(canvas),pad={l:39,r:24,t:18,b:30},side=Math.min(w-pad.l-pad.r,h-pad.t-pad.b),cx=(w+pad.l-pad.r)/2,cy=(h+pad.t-pad.b)/2;
-  let bound=2;const count=result?Math.min(1200,result.symbols):0;
-  for(let j=0;j<count;j++){const i=Math.floor(j*result.symbols/count);bound=Math.max(bound,Math.abs(result.rxI[i]),Math.abs(result.rxQ[i]));}bound=Math.ceil(bound*1.08*2)/2;
+  const selection=constellationSelection(result);let bound=2;
+  for(const i of selection.indices)bound=Math.max(bound,Math.abs(result.rxI[i]),Math.abs(result.rxQ[i]));bound=Math.ceil(bound*1.08*2)/2;
   const scale=side/(2*bound),x=v=>cx+v*scale,y=v=>cy-v*scale;
   for(let n=-2;n<=2;n++){const v=n*bound/2;line(c,x(-bound),y(v),x(bound),y(v),n===0?C.axis:C.grid);line(c,x(v),y(-bound),x(v),y(bound),n===0?C.axis:C.grid);if(n!==0){c.fillStyle=C.text;c.textAlign='center';c.fillText(v.toFixed(1),x(v),y(-bound)+16);c.textAlign='right';c.fillText(v.toFixed(1),x(-bound)-8,y(v)+3);}}
   c.fillStyle=C.text;c.textAlign='left';c.fillText('Q',x(.06),y(bound)+5);c.fillText('I',x(bound)+8,y(0)+3);
   if(!result)return;
-  const k=result.config.mode==='QPSK'?2:1,errorSymbols=new Set(result.errorIndices.map(i=>Math.floor(i/k)));
-  for(let j=0;j<count;j++){const i=Math.floor(j*result.symbols/count),bad=errorSymbols.has(i);c.globalAlpha=bad?.85:.38;circle(c,x(result.rxI[i]),y(result.rxQ[i]),bad?3:2.3,bad?C.red:C.orange);}c.globalAlpha=1;
+  const k=result.config.mode==='QPSK'?2:1;
+  for(const bad of [false,true])for(const i of selection.indices){if(selection.errorSymbols.has(i)!==bad)continue;c.globalAlpha=bad?.85:.38;circle(c,x(result.rxI[i]),y(result.rxQ[i]),bad?3:2.3,bad?C.red:C.orange);}c.globalAlpha=1;
   const a=1/Math.sqrt(k),points=k===1?[[a,0,'0'],[-a,0,'1']]:[[a,a,'00'],[-a,a,'10'],[-a,-a,'11'],[a,-a,'01']];
   for(const[i,q,label]of points){const px=x(i),py=y(q);circle(c,px,py,6,'#fff');line(c,px-4,py,px+4,py,C.blue,1.6);line(c,px,py-4,px,py+4,C.blue,1.6);c.fillStyle=C.blue;c.textAlign='center';c.fillText(label,px,py-11);}
 }

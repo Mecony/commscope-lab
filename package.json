@@ -7,7 +7,7 @@
   "scripts": {
     "start": "python3 -m http.server 8000 --directory dist",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check dist/core.js && node --check dist/app.js && node --check dist/charts.js && node --check dist/worker.js",
+    "check": "node --check dist/core.js && node --check dist/app.js && node --check dist/charts.js && node --check dist/worker.js && node --check dist/view-data.js",
     "build:portable": "python3 scripts/build-portable.py"
   }
 }
